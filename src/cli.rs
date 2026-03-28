@@ -133,6 +133,15 @@ pub enum Command {
         #[arg(short, long)]
         graph: bool,
     },
+    /// Install a Claude Code statusline
+    Statusline {
+        /// Name of the statusline to install (omit for default)
+        name: Option<String>,
+
+        /// List available statuslines
+        #[arg(short, long)]
+        list: bool,
+    },
     /// Manage model pricing configuration
     Pricing {
         /// Fetch the live pricing page and check if embedded pricing may be stale

@@ -21,6 +21,7 @@ mod parser;
 mod pricing;
 mod scanner;
 mod table;
+mod statusline;
 mod update;
 
 use cli::{Cli, Command};
@@ -500,9 +501,9 @@ fn run(cli: &Cli, config: &Config) -> Result<()> {
                 }
             }
         }
-        Some(Command::Pricing { .. }) => {
+        Some(Command::Pricing { .. }) | Some(Command::Statusline { .. }) => {
             // Handled in main() before run() is called
-            unreachable!("Pricing command should be handled before run()")
+            unreachable!("Pricing and Statusline commands should be handled before run()")
         }
         Some(Command::Session { id }) => {
             // For session command, scan all recent files (last 30 days)
@@ -582,6 +583,16 @@ fn main() -> Result<()> {
     if let Some(Command::Pricing { check: true, .. }) = &cli.command {
         let exit_code = update::check()?;
         std::process::exit(exit_code);
+    }
+
+    // Handle statusline command (no config needed)
+    if let Some(Command::Statusline { name, list }) = &cli.command {
+        if *list {
+            statusline::list();
+        } else {
+            statusline::install(name.as_deref())?;
+        }
+        return Ok(());
     }
 
     // Load config: embedded pricing as base, config file as override
