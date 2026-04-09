@@ -55,6 +55,18 @@ Claude Code pipes JSON to your script's stdin. Parse it with `jq` and combine wi
 # ~/.claude/statusline.sh
 set -euo pipefail
 
+# Cross-platform timeout: GNU timeout → Homebrew gtimeout → perl fallback
+_timeout() {
+  local secs=$1; shift
+  if command -v timeout &>/dev/null; then
+    timeout "$secs" "$@"
+  elif command -v gtimeout &>/dev/null; then
+    gtimeout "$secs" "$@"
+  else
+    perl -e 'alarm shift @ARGV; exec @ARGV' "$secs" "$@"
+  fi
+}
+
 DATA=$(cat)
 
 # Parse fields from Claude Code's JSON payload
@@ -65,9 +77,9 @@ LINES_ADDED=$(echo "$DATA" | jq -r '.cost.total_lines_added // 0')
 LINES_REMOVED=$(echo "$DATA" | jq -r '.cost.total_lines_removed // 0')
 
 # Cost summaries from ccu
-TODAY_COST=$(timeout 1s ccu today --total 2>/dev/null || echo 0)
-WEEK_COST=$(timeout 1s ccu weekly --total -w 1 2>/dev/null || echo 0)
-MONTH_COST=$(timeout 1s ccu monthly --total -m 1 2>/dev/null || echo 0)
+TODAY_COST=$(_timeout 1 ccu today --total 2>/dev/null || echo 0)
+WEEK_COST=$(_timeout 1 ccu weekly --total -w 1 2>/dev/null || echo 0)
+MONTH_COST=$(_timeout 1 ccu monthly --total -m 1 2>/dev/null || echo 0)
 SESSION_COST=$(echo "$DATA" | jq -r '.cost.total_cost_usd // 0')
 
 # Format duration
