@@ -29,6 +29,11 @@ pub struct ModelPricing {
     pub cache_read_per_mtok_above_200k: Option<f64>,
 }
 
+// As of March 13, 2026, Anthropic eliminated the >200K long context surcharge for
+// Opus 4.6 and Sonnet 4.6 - those models now bill at flat rates across the full 1M
+// context window. The tiered logic below is preserved for future models that may
+// reintroduce a long context premium. When premium_rate is None (no surcharge defined),
+// the standard rate applies at all context sizes.
 const LONG_CONTEXT_THRESHOLD: u64 = 200_000;
 
 /// Strip dated model ID suffix (e.g., `claude-opus-4-5-20251101` -> `claude-opus-4-5`)
