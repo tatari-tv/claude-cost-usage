@@ -42,7 +42,7 @@ const LONG_CONTEXT_THRESHOLD: u64 = 200_000;
 pub fn normalize_model_id(model_id: &str) -> &str {
     // Bare names -> latest version
     match model_id {
-        "opus" => return "claude-opus-4-6",
+        "opus" => return "claude-opus-4-7",
         "sonnet" => return "claude-sonnet-4-6",
         "haiku" => return "claude-haiku-4-5",
         _ => {}
@@ -198,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_normalize_model_id_bare_names() {
-        assert_eq!(normalize_model_id("opus"), "claude-opus-4-6");
+        assert_eq!(normalize_model_id("opus"), "claude-opus-4-7");
         assert_eq!(normalize_model_id("sonnet"), "claude-sonnet-4-6");
         assert_eq!(normalize_model_id("haiku"), "claude-haiku-4-5");
     }
