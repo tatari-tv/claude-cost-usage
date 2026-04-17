@@ -82,9 +82,17 @@ echo "$MODEL | ctx:$CTX | M\$$MONTH_COST W\$$WEEK_COST D\$$TODAY_COST S\$$SESSIO
 
 ### Full Powerline-Style Statusline
 
-For a polished statusline with ANSI colors, powerline arrows, git branch, color-coded context usage, and theme support, see:
+For a polished statusline with ANSI colors, powerline arrows, git branch, color-coded context usage, and theme support, see the examples in [`statusline.d/`](statusline.d/):
 
-- [scottidler/claude - statusline.sh](https://github.com/scottidler/claude/blob/main/statusline.sh)
+- [`statusline.d/scottidler`](statusline.d/scottidler) — the original two-line powerline statusline with catppuccin-mocha theme support
+- [`statusline.d/nerdfonts`](statusline.d/nerdfonts) — **Nerd Fonts variant** with a dark matrix/cyberpunk palette, Nerd Font glyphs for every segment, and a dot-bar context indicator (requires a [Nerd Fonts](https://www.nerdfonts.com) patched terminal font)
+
+To install either, copy it to `~/.claude/statusline.sh` and make it executable:
+
+```bash
+cp statusline.d/nerdfonts ~/.claude/statusline.sh
+chmod +x ~/.claude/statusline.sh
+```
 
 ### Other Options
 
