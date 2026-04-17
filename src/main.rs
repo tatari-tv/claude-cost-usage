@@ -600,7 +600,7 @@ fn main() -> Result<()> {
     }
 
     // Load config once; use its log_level to initialize logging.
-    let mut config = Config::load(cli.config.as_ref()).context("Failed to load configuration")?;
+    let (mut config, config_path) = Config::load(cli.config.as_ref()).context("Failed to load configuration")?;
     let (filter, has_explicit_level) = resolve_log_filter(cli.log_level.as_deref(), config.log_level.as_deref());
     setup_logging(&filter, has_explicit_level).context("Failed to setup logging")?;
 
@@ -638,15 +638,20 @@ fn main() -> Result<()> {
     if !stale_models.is_empty() {
         let mut models: Vec<&str> = stale_models.iter().map(|s| s.as_str()).collect();
         models.sort();
+        let path_display = config_path
+            .as_deref()
+            .map(|p| p.display().to_string())
+            .unwrap_or_else(|| "<unknown config path>".to_string());
         eprintln!(
-            "warning: your ~/.config/ccu/ccu.yml has stale *_above_200k pricing tiers for: {}.\n\
+            "warning: your {path} has stale *_above_200k pricing tiers for: {models}.\n\
              Anthropic eliminated the >200K long-context surcharge for these models on 2026-03-13,\n\
              so leaving them in place over-bills any request with >200K input tokens.\n\
              \n\
              To fix, either:\n  \
-               - delete ~/.config/ccu/ccu.yml entirely (the binary's embedded pricing covers everything), or\n  \
+               - delete {path} entirely (the binary's embedded pricing covers everything), or\n  \
                - remove just the *_above_200k lines from the affected model entries.\n",
-            models.join(", ")
+            path = path_display,
+            models = models.join(", ")
         );
     }
 
