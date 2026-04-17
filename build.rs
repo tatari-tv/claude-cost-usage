@@ -27,6 +27,6 @@ fn main() {
     println!("cargo:rustc-env=PRICING_PAGE_SHA256={}", pricing_hash);
     println!("cargo:rerun-if-changed=.git/HEAD");
     println!("cargo:rerun-if-changed=.git/refs/");
-    println!("cargo:rerun-if-changed=data/pricing.yml");
+    println!("cargo:rerun-if-changed=data/pricing.json");
     println!("cargo:rerun-if-changed=data/pricing-page.sha256");
 }
