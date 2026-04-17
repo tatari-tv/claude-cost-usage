@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
-# bin/update - Fetch Anthropic's pricing page and regenerate data/pricing.yml
+# bin/update - Fetch Anthropic's pricing page and regenerate data/pricing.json
 #
 # This script fetches the raw markdown pricing page from Anthropic,
 # parses the "Model pricing" and "Long context pricing" tables using awk,
-# and generates data/pricing.yml in the format expected by the Rust structs.
+# and generates data/pricing.json in the format expected by the Rust structs.
 #
 # Usage:
 #   bin/update          # fetch, parse, generate, show diff
@@ -16,7 +16,7 @@ set -euo pipefail
 # Sharing across bash/Rust is not worth the complexity for a single URL.
 PRICING_URL="https://platform.claude.com/docs/en/about-claude/pricing.md"
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-PRICING_FILE="$REPO_ROOT/data/pricing.yml"
+PRICING_FILE="$REPO_ROOT/data/pricing.json"
 HASH_FILE="$REPO_ROOT/data/pricing-page.sha256"
 
 DRY_RUN=false
@@ -183,7 +183,7 @@ echo "Generating data/pricing.yml..."
 # Build the YAML output from the parsed data.
 # First pass: collect base pricing for each model.
 # Second pass: merge long context pricing.
-YAML_OUTPUT=$(echo "$PARSED" | awk '
+JSON_OUTPUT=$(echo "$PARSED" | awk '
 BEGIN {
     model_count = 0
 }
@@ -210,16 +210,17 @@ $1 == "LONG" {
 }
 
 END {
-    print "pricing:"
+    print "{"
+    print "  \"pricing\": {"
     for (i = 0; i < model_count; i++) {
         id = models[i]
-        if (i > 0) print ""
-        printf "  %s:\n", id
-        printf "    input_per_mtok: %s\n", input[id]
-        printf "    output_per_mtok: %s\n", output[id]
-        printf "    cache_5m_write_per_mtok: %s\n", cache_5m[id]
-        printf "    cache_1h_write_per_mtok: %s\n", cache_1h[id]
-        printf "    cache_read_per_mtok: %s\n", cache_read[id]
+        if (i > 0) printf ",\n"
+        printf "    \"%s\": {\n", id
+        printf "      \"input_per_mtok\": %s,\n", input[id]
+        printf "      \"output_per_mtok\": %s,\n", output[id]
+        printf "      \"cache_5m_write_per_mtok\": %s,\n", cache_5m[id]
+        printf "      \"cache_1h_write_per_mtok\": %s,\n", cache_1h[id]
+        printf "      \"cache_read_per_mtok\": %s", cache_read[id]
 
         # Add long context pricing if available
         if (id in long_input && long_input[id] > 0) {
@@ -229,18 +230,21 @@ END {
             #   cache_read = input * 0.1
             li = long_input[id]
             lo = long_output[id]
-            printf "    input_per_mtok_above_200k: %s\n", li
-            printf "    output_per_mtok_above_200k: %s\n", lo
-            printf "    cache_5m_write_per_mtok_above_200k: %s\n", li * 1.25
-            printf "    cache_1h_write_per_mtok_above_200k: %s\n", li * 2.0
-            printf "    cache_read_per_mtok_above_200k: %s\n", li * 0.1
+            printf ",\n      \"input_per_mtok_above_200k\": %s", li
+            printf ",\n      \"output_per_mtok_above_200k\": %s", lo
+            printf ",\n      \"cache_5m_write_per_mtok_above_200k\": %s", li * 1.25
+            printf ",\n      \"cache_1h_write_per_mtok_above_200k\": %s", li * 2.0
+            printf ",\n      \"cache_read_per_mtok_above_200k\": %s", li * 0.1
         }
+        printf "\n    }"
     }
+    printf "\n  }\n"
+    print "}"
 }
 ')
 
-if [[ -z "$YAML_OUTPUT" ]]; then
-    echo "Error: failed to generate YAML output" >&2
+if [[ -z "$JSON_OUTPUT" ]]; then
+    echo "Error: failed to generate JSON output" >&2
     exit 1
 fi
 
@@ -251,14 +255,14 @@ if [[ "$DRY_RUN" == true ]]; then
     echo ""
     echo "=== Dry run - would write: ==="
     echo ""
-    echo "$YAML_OUTPUT"
+    echo "$JSON_OUTPUT"
     echo ""
     echo "SHA-256: $PAGE_HASH"
     exit 0
 fi
 
 # Write files
-echo "$YAML_OUTPUT" > "$PRICING_FILE"
+echo "$JSON_OUTPUT" > "$PRICING_FILE"
 echo "$PAGE_HASH" > "$HASH_FILE"
 
 echo ""
@@ -269,7 +273,7 @@ echo ""
 # Show git diff if in a git repo
 if git -C "$REPO_ROOT" rev-parse --git-dir >/dev/null 2>&1; then
     echo "=== Changes ==="
-    git -C "$REPO_ROOT" diff data/pricing.yml data/pricing-page.sha256 || true
+    git -C "$REPO_ROOT" diff data/pricing.json data/pricing-page.sha256 || true
 fi
 
 echo ""
